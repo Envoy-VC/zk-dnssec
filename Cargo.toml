@@ -1,6 +1,16 @@
 [workspace]
-members = ["lib", "program", "script"]
+members = ["lib", "program"]
 resolver = "2"
 
 [workspace.dependencies]
 alloy-sol-types = "0.7.7"
+rsa = { version = "0.9.6", features = ["sha2"] }
+crypto-bigint = "0.5.5"
+sha2 = "0.10.8"
+ecdsa = { version = "0.16.9" }
+p256 = { version = "0.13.2" }
+
+
+[patch.crates-io]
+ecdsa = { git = "https://github.com/sp1-patches/signatures", package = "ecdsa", tag = "patch-0.16.9-sp1-4.0.0" }
+p256 = { git = "https://github.com/sp1-patches/elliptic-curves", tag = "patch-p256-13.2-sp1-4.1.0" }
