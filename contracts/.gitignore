@@ -13,3 +13,13 @@ docs/
 
 # Dotenv file
 .env
+.env.local
+.env.test
+.env.test.local
+
+# Ignore node_modules
+node_modules/
+
+# Ignore coverage
+coverage/
+coverage.json
