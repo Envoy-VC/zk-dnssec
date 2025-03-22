@@ -42,11 +42,11 @@ pub fn verify_rrsig(
     public_key: Vec<u8>,
     name: &Name,
     dns_class: DNSClass,
-    sig: &SIG,
+    rrsig: &SIG,
     records: &[Record],
     signature: Vec<u8>,
 ) -> bool {
-    let message = construct_rrset_message_with_sig(name, dns_class, sig, records);
+    let message = construct_rrset_message_with_sig(name, dns_class, rrsig, records);
 
     verify_ecdsa_signature(public_key, message, signature)
 }

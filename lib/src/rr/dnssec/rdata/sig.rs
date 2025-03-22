@@ -7,15 +7,15 @@ use crate::serialize::binary::{BinEncodable, BinEncoder};
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Deserialize, Serialize)]
 pub struct SIG {
-    type_covered: RecordType,
-    algorithm: Algorithm,
-    num_labels: u8,
-    original_ttl: u32,
-    sig_expiration: u32,
-    sig_inception: u32,
-    key_tag: u16,
-    signer_name: Name,
-    sig: Vec<u8>,
+    pub type_covered: RecordType,
+    pub algorithm: Algorithm,
+    pub num_labels: u8,
+    pub original_ttl: u32,
+    pub sig_expiration: u32,
+    pub sig_inception: u32,
+    pub key_tag: u16,
+    pub signer_name: Name,
+    pub sig: Vec<u8>,
 }
 
 impl SIG {

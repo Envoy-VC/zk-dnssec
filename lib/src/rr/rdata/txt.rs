@@ -1,15 +1,19 @@
 use serde::{Deserialize, Serialize};
 
-use crate::serialize::binary::{BinEncodable, BinEncoder};
+use crate::{rr::record_data::RData, serialize::binary::{BinEncodable, BinEncoder}};
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct TXT {
-    txt_data: Box<[Box<[u8]>]>,
+    pub txt_data: Box<[Box<[u8]>]>,
 }
 
 impl TXT {
     pub fn txt_data(&self) -> &[Box<[u8]>] {
         &self.txt_data
+    }
+
+    pub fn into_rdata(self) -> RData {
+        RData::TXT(self)
     }
 }
 

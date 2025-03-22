@@ -7,11 +7,11 @@ use crate::rr::record_type::RecordType;
 
 #[derive(PartialEq, Eq, Debug, Clone, Deserialize, Serialize)]
 pub struct Record {
-    name_labels: Name,
-    rr_type: RecordType,
-    dns_class: DNSClass,
-    ttl: u32,
-    rdata: Option<RData>,
+    pub name_labels: Name,
+    pub rr_type: RecordType,
+    pub dns_class: DNSClass,
+    pub ttl: u32,
+    pub rdata: Option<RData>,
 }
 
 impl Record {

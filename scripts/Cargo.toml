@@ -1,0 +1,31 @@
+[package]
+version = "0.1.0"
+name = "zkdnssec-scripts"
+edition = "2021"
+default-run = "entrypoint"
+
+[[bin]]
+name = "entrypoint"
+path = "src/entrypoint.rs"
+
+
+[dependencies]
+sp1-sdk = "4.0.0"
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+serde = { workspace = true }
+clap = { version = "4.0", features = ["derive", "env"] }
+alloy-sol-types = { workspace = true }
+zkdnssec-lib = { path = "../lib" }
+trust-dns-client = { version = "0.23.2", features = [
+    "dnssec-openssl",
+    "dnssec",
+    "serde-config",
+] }
+trust-dns-resolver = { version = "0.23.2", features = ["dnssec"] }
+tabled = "0.15"
+enum-map = "2"
+enum-map-derive = "0.17"
+hashbrown = "0.14.5"
+
+[build-dependencies]
+sp1-build = "4.0.0"

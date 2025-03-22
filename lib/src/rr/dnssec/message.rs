@@ -76,12 +76,7 @@ pub fn construct_rrset_message_with_sig(
 
     // collect only the records for this rrset
     for record in records {
-        if dns_class == record.dns_class()
-            && type_covered == record.record_type()
-            && name == record.name()
-        {
-            rrset.push(record);
-        }
+        rrset.push(record);
     }
 
     let num_labels = sig.num_labels();

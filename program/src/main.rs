@@ -12,10 +12,11 @@ pub fn main() {
     let name = sp1_zkvm::io::read::<Name>();
     let dns_class = sp1_zkvm::io::read::<DNSClass>();
     let sig = sp1_zkvm::io::read::<SIG>();
-    let records = sp1_zkvm::io::read::<Vec<Record>>();
+    let record = sp1_zkvm::io::read::<Record>();
     let signature = sp1_zkvm::io::read_vec();
 
-    let is_valid = verify_rrsig(public_key, &name, dns_class, &sig, &records, signature);
+    let is_valid = verify_rrsig(public_key, &name, dns_class, &sig, &[record], signature);
+
     let bytes = PublicValuesStruct::abi_encode(&PublicValuesStruct { is_valid });
 
     sp1_zkvm::io::commit_slice(&bytes);
