@@ -1,4 +1,7 @@
 use serde::{Deserialize, Serialize};
+use std::hash::{Hash, Hasher};
+
+use crate::rr::domain::label::Label;
 
 #[derive(Clone, Default, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Name {
@@ -69,5 +72,19 @@ impl Name {
             .next()
             .map(|l| if l == b"*" { num - 1 } else { num })
             .unwrap_or(num)
+    }
+}
+
+impl Hash for Name {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.is_fqdn.hash(state);
+
+        // this needs to be CaseInsensitive like PartialEq
+        for l in self
+            .iter()
+            .map(|l| Label::from_raw_bytes(l).unwrap().to_lowercase())
+        {
+            l.hash(state);
+        }
     }
 }
