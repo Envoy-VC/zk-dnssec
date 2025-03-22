@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
-use crate::rr::domain::label::Label;
+use crate::{rr::domain::label::Label, serialize::binary::BinEncoder};
 
 #[derive(Clone, Default, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Name {
@@ -97,6 +97,19 @@ impl Name {
             .unwrap_or(num)
     }
 
+    pub fn to_lowercase(&self) -> Self {
+        let new_label_data = self
+            .label_data
+            .iter()
+            .map(|c| c.to_ascii_lowercase())
+            .collect();
+        Self {
+            is_fqdn: self.is_fqdn,
+            label_data: new_label_data,
+            label_ends: self.label_ends.clone(),
+        }
+    }
+
     pub fn trim_to(&self, num_labels: usize) -> Self {
         if num_labels > self.label_ends.len() {
             self.clone()
@@ -144,6 +157,65 @@ impl Name {
         }
 
         Ok(name)
+    }
+
+    pub fn emit_as_canonical(
+        &self,
+        encoder: &mut BinEncoder<'_>,
+        canonical: bool,
+    ) -> Result<(), String> {
+        let buf_len = encoder.len();
+        let labels = self.iter();
+
+        // start index of each label
+        let mut labels_written = Vec::with_capacity(self.label_ends.len());
+        // we're going to write out each label, tracking the indexes of the start to each label
+        //   then we'll look to see if we can remove them and recapture the capacity in the buffer...
+        for label in labels {
+            if label.len() > 63 {
+                return Err("Label Bytes too long".into());
+            }
+
+            labels_written.push(encoder.offset());
+            encoder.emit_character_data(label)?;
+        }
+        let last_index = encoder.offset();
+        // now search for other labels already stored matching from the beginning label, strip then to the end
+        //   if it's not found, then store this as a new label
+        for label_idx in &labels_written {
+            match encoder.get_label_pointer(*label_idx, last_index) {
+                // if writing canonical and already found, continue
+                Some(_) if canonical => continue,
+                Some(loc) if !canonical => {
+                    // reset back to the beginning of this label, and then write the pointer...
+                    encoder.set_offset(*label_idx);
+                    encoder.trim();
+
+                    // write out the pointer marker
+                    //  or'd with the location which shouldn't be larger than this 2^14 or 16k
+                    encoder.emit_u16(0xC000u16 | (loc & 0x3FFFu16))?;
+
+                    // we found a pointer don't write more, break
+                    return Ok(());
+                }
+                _ => {
+                    // no existing label exists, store this new one.
+                    encoder.store_label_pointer(*label_idx, last_index);
+                }
+            }
+        }
+
+        // if we're getting here, then we didn't write out a pointer and are ending the name
+        // the end of the list of names
+        encoder.emit(0)?;
+
+        // the entire name needs to be less than 256.
+        let length = encoder.len() - buf_len;
+        if length > 255 {
+            return Err("Domain name too long".into());
+        }
+
+        Ok(())
     }
 }
 

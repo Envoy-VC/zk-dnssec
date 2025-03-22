@@ -13,3 +13,32 @@ pub struct Record {
     ttl: u32,
     rdata: RData,
 }
+
+impl Record {
+    #[inline]
+    pub fn dns_class(&self) -> DNSClass {
+        self.dns_class
+    }
+
+    #[inline]
+    pub fn record_type(&self) -> RecordType {
+        self.rr_type
+    }
+
+    #[inline]
+    pub fn name(&self) -> &Name {
+        &self.name_labels
+    }
+
+    #[inline]
+    pub fn data(&self) -> Option<&RData> {
+        self.rdata
+    }
+
+    pub const fn as_ref(&self) -> Option<&T> {
+        match *self {
+            Some(ref x) => Some(x),
+            None => None,
+        }
+    }
+}

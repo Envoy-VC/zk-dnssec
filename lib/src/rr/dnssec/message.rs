@@ -1,7 +1,10 @@
+use std::io::Write;
+
 use crate::rr::dns_class::DNSClass;
 use crate::rr::dnssec::rdata::sig::SIG;
 use crate::rr::domain::name::Name;
 use crate::rr::resource::Record;
+use crate::serialize::binary::{BinEncodable, BinEncoder};
 
 //                      Reconstructing the Signed Data
 //
@@ -69,9 +72,22 @@ pub fn construct_rrset_message_with_sig(
     // TODO: Implement
 
     // 1. Sort the records
+    let mut rrset: Vec<&Record> = Vec::new();
+
+    let mut type_covered = sig.type_covered();
+
+    // collect only the records for this rrset
+    for record in records {
+        if dns_class == record.dns_class()
+            && type_covered == record.record_type()
+            && name == record.name()
+        {
+            rrset.push(record);
+        }
+    }
 
     let num_labels = sig.num_labels();
-    let type_covered = sig.type_covered();
+
     let algorithm = sig.algorithm();
     let original_ttl = sig.original_ttl();
     let sig_expiration = sig.sig_expiration();
@@ -79,7 +95,46 @@ pub fn construct_rrset_message_with_sig(
     let key_tag = sig.key_tag();
     let signer_name = sig.signer_name();
 
-    Vec::new()
+    let name = determine_name(name, num_labels).unwrap();
+
+    let mut buf: Vec<u8> = Vec::new();
+    let mut encoder: BinEncoder<'_> = BinEncoder::new(&mut buf);
+
+    encoder.set_canonical_names(true);
+    type_covered.emit(&mut encoder).unwrap();
+    algorithm.emit(&mut encoder).unwrap();
+    encoder.emit(num_labels).unwrap();
+    encoder.emit_u32(original_ttl).unwrap();
+    encoder.emit_u32(sig_expiration).unwrap();
+    encoder.emit_u32(sig_inception).unwrap();
+    encoder.emit_u16(key_tag).unwrap();
+    signer_name.emit_as_canonical(&mut encoder, true).unwrap();
+
+    // Place RRSets
+    for record in rrset {
+        name.to_lowercase()
+            .emit_as_canonical(&mut encoder, true)
+            .unwrap();
+
+        type_covered.emit(&mut encoder).unwrap();
+        dns_class.emit(&mut encoder).unwrap();
+        encoder.emit_u32(original_ttl).unwrap();
+
+        let mut rdata_buf: Vec<u8> = Vec::new();
+
+        {
+            let mut rdata_encoder = BinEncoder::new(&mut rdata_buf);
+            rdata_encoder.set_canonical_names(true);
+            if let Some(rdata) = record.data() {
+                assert!(rdata.emit(&mut rdata_encoder).is_ok());
+            }
+        }
+
+        encoder.emit_u16(rdata_buf.len() as u16).unwrap();
+        encoder.emit_vec(&rdata_buf).unwrap(); // TODO: Implement
+    }
+
+    buf
 }
 
 pub fn determine_name(name: &Name, num_labels: u8) -> Result<Name, String> {

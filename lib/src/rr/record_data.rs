@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::serialize::binary::{BinEncodable, BinEncoder};
+
 use super::rdata::rrsig::RRSIG;
 use super::rdata::txt::TXT;
 
@@ -53,4 +55,13 @@ pub enum RData {
     ///    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     /// ```
     RRSIG(RRSIG),
+}
+
+impl BinEncodable for RData {
+    fn emit(&self, encoder: &mut BinEncoder<'_>) -> Result<(), String> {
+        match *self {
+            Self::TXT(ref txt) => txt.emit(encoder), // TODO: Implement
+            Self::RRSIG(ref sig) => sig.emit(encoder), // TODO: Implement
+        }
+    }
 }
