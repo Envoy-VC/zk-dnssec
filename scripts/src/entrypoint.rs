@@ -1,10 +1,13 @@
+use std::path::PathBuf;
+
 use alloy_sol_types::SolType;
 use clap::{Parser, ValueEnum};
 
 pub mod helpers;
 pub mod table;
 
-use sp1_sdk::{include_elf, ProverClient, SP1ProofMode, SP1Stdin};
+use serde::{Deserialize, Serialize};
+use sp1_sdk::{include_elf, HashableKey, ProverClient, SP1ProofMode, SP1Stdin};
 use table::Report;
 use zkdnssec_lib::PublicValuesStruct;
 
@@ -18,6 +21,15 @@ pub enum ProofType {
     Compressed,
     Groth16,
     Plonk,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SP1ZKDNSSECProofFixture {
+    is_valid: bool,
+    vkey: String,
+    public_values: String,
+    proof: String,
 }
 
 #[derive(Parser, Debug)]
@@ -102,6 +114,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .expect("Failed to generate proof");
 
         proof.save("proof").expect("Failed to save proof");
+
+        let bytes = proof.public_values.as_slice();
+        let pub_values = PublicValuesStruct::abi_decode(bytes, false).unwrap();
+
+        // Create the testing fixture so we can test things end-to-end.
+        let fixture = SP1ZKDNSSECProofFixture {
+            is_valid: pub_values.is_valid,
+            vkey: vk.vk.bytes32().to_string(),
+            public_values: format!("0x{}", hex::encode(bytes)),
+            proof: format!("0x{}", hex::encode(proof.bytes())),
+        };
+
+        let fixture_path =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../contracts/src/fixtures");
+        std::fs::create_dir_all(&fixture_path).expect("failed to create fixture path");
+        std::fs::write(
+            fixture_path.join(format!("{:?}-fixture.json", mode).to_lowercase()),
+            serde_json::to_string_pretty(&fixture).unwrap(),
+        )
+        .expect("failed to write fixture");
 
         println!("Successfully generated proof!");
         client.verify(&proof, &vk).expect("failed to verify proof");
