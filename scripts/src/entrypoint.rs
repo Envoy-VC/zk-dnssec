@@ -54,9 +54,14 @@ struct Args {
     /// Flag to print report
     #[arg(long)]
     print_report: bool,
+
+    /// Flag to verify
+    #[arg(long, default_value_t = false)]
+    verify: bool,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    dotenv::dotenv().ok();
     let args = Args::parse();
     let inputs = generate_inputs(&args.domain)?;
 
@@ -90,6 +95,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let decoded = PublicValuesStruct::abi_decode(output.as_slice(), true)?;
 
         println!("RRSIG Verified: {:#?}", decoded.is_valid);
+
+        println!(
+            "executed program with {} cycles",
+            report.total_instruction_count()
+        );
 
         if args.print_report {
             let report = Report::from_execution_report(report);
@@ -136,7 +146,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("failed to write fixture");
 
         println!("Successfully generated proof!");
-        client.verify(&proof, &vk).expect("failed to verify proof");
+        if args.verify {
+            client.verify(&proof, &vk).expect("failed to verify proof");
+        }
         println!("Successfully verified proof!");
     }
 

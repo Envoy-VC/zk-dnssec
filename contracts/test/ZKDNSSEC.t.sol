@@ -7,7 +7,7 @@ import {ZKDNSSEC} from "../src/ZKDNSSEC.sol";
 import {SP1VerifierGateway} from "@sp1-contracts/SP1VerifierGateway.sol";
 
 struct SP1ProofFixtureJson {
-    bool is_valid;
+    bool isValid;
     bytes proof;
     bytes publicValues;
     bytes32 vkey;
@@ -39,8 +39,8 @@ contract ZKDNSSECGroth16Test is Test {
 
         vm.mockCall(verifier, abi.encodeWithSelector(SP1VerifierGateway.verifyProof.selector), abi.encode(true));
 
-        (bool is_valid) = dnssec.verifyDNSSECRecord(fixture.publicValues, fixture.proof);
-        assert(is_valid == fixture.is_valid);
+        (bool isValid) = dnssec.verifyDNSSECRecord(fixture.publicValues, fixture.proof);
+        assert(isValid == fixture.isValid);
     }
 
     function testFail_InvalidDNSSECProof() public view {
@@ -79,8 +79,8 @@ contract DNSSECPlonkTest is Test {
 
         vm.mockCall(verifier, abi.encodeWithSelector(SP1VerifierGateway.verifyProof.selector), abi.encode(true));
 
-        (bool is_valid) = dnssec.verifyDNSSECRecord(fixture.publicValues, fixture.proof);
-        assert(is_valid == fixture.is_valid);
+        (bool isValid) = dnssec.verifyDNSSECRecord(fixture.publicValues, fixture.proof);
+        assert(isValid == fixture.isValid);
     }
 
     function testFail_InvalidFibonacciProof() public view {
