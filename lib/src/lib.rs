@@ -1,5 +1,7 @@
 use alloy_sol_types::sol;
 
+pub mod rr;
+
 use ecdsa::signature::Verifier;
 use p256::ecdsa::{Signature, VerifyingKey};
 

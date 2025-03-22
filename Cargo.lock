@@ -1839,6 +1839,7 @@ dependencies = [
  "alloy-sol-types",
  "ecdsa 0.16.9 (git+https://github.com/sp1-patches/signatures?tag=patch-0.16.9-sp1-4.0.0)",
  "p256",
+ "serde",
 ]
 
 [[package]]

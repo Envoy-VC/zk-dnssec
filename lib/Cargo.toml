@@ -7,3 +7,4 @@ edition = "2021"
 alloy-sol-types = { workspace = true }
 ecdsa = { workspace = true }
 p256 = { workspace = true }
+serde = { workspace = true }
