@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::rr::dnssec::algorithm::Algorithm;
 use crate::rr::domain::name::Name;
 use crate::rr::record_type::RecordType;
+use crate::serialize::binary::{BinEncodable, BinEncoder};
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Deserialize, Serialize)]
 pub struct SIG {
@@ -171,5 +172,45 @@ impl SIG {
     /// ```
     pub fn signer_name(&self) -> &Name {
         &self.signer_name
+    }
+
+    pub fn sig(&self) -> &[u8] {
+        &self.sig
+    }
+}
+
+impl BinEncodable for SIG {
+    /// [RFC 4034](https://tools.ietf.org/html/rfc4034#section-6), DNSSEC Resource Records, March 2005
+    ///
+    /// This is accurate for all currently known name records.
+    ///
+    /// ```text
+    /// 6.2.  Canonical RR Form
+    ///
+    ///    For the purposes of DNS security, the canonical form of an RR is the
+    ///    wire format of the RR where:
+    ///
+    ///    ...
+    ///
+    ///    3.  if the type of the RR is NS, MD, MF, CNAME, SOA, MB, MG, MR, PTR,
+    ///        HINFO, MINFO, MX, HINFO, RP, AFSDB, RT, SIG, PX, NXT, NAPTR, KX,
+    ///        SRV, DNAME, A6, RRSIG, or (rfc6840 removes NSEC), all uppercase
+    ///        US-ASCII letters in the DNS names contained within the RDATA are replaced
+    ///        by the corresponding lowercase US-ASCII letters;
+    /// ```
+    fn emit(&self, encoder: &mut BinEncoder<'_>) -> Result<(), String> {
+        let is_canonical_names = encoder.is_canonical_names();
+
+        self.type_covered().emit(encoder)?;
+        self.algorithm().emit(encoder)?;
+        encoder.emit(self.num_labels())?;
+        encoder.emit_u32(self.original_ttl())?;
+        encoder.emit_u32(self.sig_expiration())?;
+        encoder.emit_u32(self.sig_inception())?;
+        encoder.emit_u16(self.key_tag())?;
+        self.signer_name()
+            .emit_with_lowercase(encoder, is_canonical_names)?;
+        encoder.emit_vec(self.sig())?;
+        Ok(())
     }
 }

@@ -58,6 +58,23 @@ impl<'a> BinEncoder<'a> {
         self.canonical_names = canonical_names;
     }
 
+    pub fn is_canonical_names(&self) -> bool {
+        self.canonical_names
+    }
+
+    pub fn with_canonical_names<F: FnOnce(&mut Self) -> Result<(), String>>(
+        &mut self,
+        f: F,
+    ) -> Result<(), String> {
+        let was_canonical = self.is_canonical_names();
+        self.set_canonical_names(true);
+
+        let res = f(self);
+        self.set_canonical_names(was_canonical);
+
+        res
+    }
+
     pub fn emit_character_data<S: AsRef<[u8]>>(&mut self, char_data: S) -> Result<(), String> {
         let char_bytes = char_data.as_ref();
         if char_bytes.len() > 255 {
@@ -122,6 +139,10 @@ impl<'a> BinEncoder<'a> {
 
     pub fn emit_u32(&mut self, data: u32) -> Result<(), String> {
         self.write_slice(&data.to_be_bytes())
+    }
+
+    pub fn emit_vec(&mut self, data: &[u8]) -> Result<(), String> {
+        self.write_slice(data)
     }
 
     fn write_slice(&mut self, data: &[u8]) -> Result<(), String> {

@@ -110,6 +110,20 @@ impl Name {
         }
     }
 
+    pub fn emit_with_lowercase(
+        &self,
+        encoder: &mut BinEncoder<'_>,
+        lowercase: bool,
+    ) -> Result<(), String> {
+        let is_canonical_names = encoder.is_canonical_names();
+        if lowercase {
+            self.to_lowercase()
+                .emit_as_canonical(encoder, is_canonical_names)
+        } else {
+            self.emit_as_canonical(encoder, is_canonical_names)
+        }
+    }
+
     pub fn trim_to(&self, num_labels: usize) -> Self {
         if num_labels > self.label_ends.len() {
             self.clone()
