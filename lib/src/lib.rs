@@ -38,7 +38,7 @@ pub fn verify_ecdsa_signature(public_key: Vec<u8>, message: Vec<u8>, signature: 
     is_valid
 }
 
-pub fn verify_record(
+pub fn verify_rrsig(
     public_key: Vec<u8>,
     name: &Name,
     dns_class: DNSClass,
