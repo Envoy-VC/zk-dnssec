@@ -33,6 +33,10 @@ impl Label {
     pub fn to_lowercase(&self) -> Self {
         Self(self.0.to_ascii_lowercase())
     }
+
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
 }
 
 impl Borrow<[u8]> for Label {
