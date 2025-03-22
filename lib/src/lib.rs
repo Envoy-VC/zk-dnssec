@@ -5,15 +5,18 @@ pub mod serialize;
 
 use ecdsa::signature::Verifier;
 use p256::ecdsa::{Signature, VerifyingKey};
+use rr::{
+    dns_class::DNSClass,
+    dnssec::{message::construct_rrset_message_with_sig, rdata::sig::SIG},
+    domain::name::Name,
+    resource::Record,
+};
 
 sol! {
-    /// The public values encoded as a struct that can be easily deserialized inside Solidity.
     struct PublicValuesStruct {
         bool is_valid;
     }
 }
-
-pub fn verify_rrsig() {}
 
 pub fn verify_ecdsa_signature(public_key: Vec<u8>, message: Vec<u8>, signature: Vec<u8>) -> bool {
     let sec1_pubkey: Vec<u8> = if public_key.len() == 64 {
@@ -33,4 +36,17 @@ pub fn verify_ecdsa_signature(public_key: Vec<u8>, message: Vec<u8>, signature: 
     let is_valid = verifying_key.verify(message.as_ref(), &sig).is_ok();
 
     is_valid
+}
+
+pub fn verify_record(
+    public_key: Vec<u8>,
+    name: &Name,
+    dns_class: DNSClass,
+    sig: &SIG,
+    records: &[Record],
+    signature: Vec<u8>,
+) -> bool {
+    let message = construct_rrset_message_with_sig(name, dns_class, sig, records);
+
+    verify_ecdsa_signature(public_key, message, signature)
 }
