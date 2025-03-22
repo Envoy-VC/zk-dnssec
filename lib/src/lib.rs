@@ -13,6 +13,8 @@ sol! {
     }
 }
 
+pub fn verify_rrsig() {}
+
 pub fn verify_ecdsa_signature(public_key: Vec<u8>, message: Vec<u8>, signature: Vec<u8>) -> bool {
     let sec1_pubkey: Vec<u8> = if public_key.len() == 64 {
         let mut buf = Vec::with_capacity(65);

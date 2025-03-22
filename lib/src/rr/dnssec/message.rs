@@ -1,5 +1,3 @@
-use std::io::Write;
-
 use crate::rr::dns_class::DNSClass;
 use crate::rr::dnssec::rdata::sig::SIG;
 use crate::rr::domain::name::Name;
@@ -74,7 +72,7 @@ pub fn construct_rrset_message_with_sig(
     // 1. Sort the records
     let mut rrset: Vec<&Record> = Vec::new();
 
-    let mut type_covered = sig.type_covered();
+    let type_covered = sig.type_covered();
 
     // collect only the records for this rrset
     for record in records {
@@ -131,7 +129,7 @@ pub fn construct_rrset_message_with_sig(
         }
 
         encoder.emit_u16(rdata_buf.len() as u16).unwrap();
-        encoder.emit_vec(&rdata_buf).unwrap(); // TODO: Implement
+        encoder.emit_vec(&rdata_buf).unwrap();
     }
 
     buf

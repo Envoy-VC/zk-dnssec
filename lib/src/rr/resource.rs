@@ -11,7 +11,7 @@ pub struct Record {
     rr_type: RecordType,
     dns_class: DNSClass,
     ttl: u32,
-    rdata: RData,
+    rdata: Option<RData>,
 }
 
 impl Record {
@@ -32,13 +32,6 @@ impl Record {
 
     #[inline]
     pub fn data(&self) -> Option<&RData> {
-        self.rdata
-    }
-
-    pub const fn as_ref(&self) -> Option<&T> {
-        match *self {
-            Some(ref x) => Some(x),
-            None => None,
-        }
+        self.rdata.as_ref()
     }
 }

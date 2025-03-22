@@ -63,6 +63,10 @@ impl Name {
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.label_ends.is_empty()
+    }
+
     pub fn len(&self) -> usize {
         let dots = if !self.label_ends.is_empty() {
             self.label_ends.len()
@@ -148,7 +152,7 @@ impl Name {
     pub fn from_labels(labels: Vec<&[u8]>) -> Result<Self, String> {
         let (labels, errors): (Vec<_>, Vec<_>) = labels
             .into_iter()
-            .map(|l| Label::from_raw_bytes(l))
+            .map(Label::from_raw_bytes)
             .partition(Result::is_ok);
 
         let labels: Vec<_> = labels.into_iter().map(Result::unwrap).collect();

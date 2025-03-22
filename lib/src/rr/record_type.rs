@@ -17,7 +17,6 @@ pub enum RecordType {
     DNSKEY,
     DS,
     HINFO,
-
     HTTPS,
     IXFR,
     KEY,
