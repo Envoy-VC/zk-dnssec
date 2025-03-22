@@ -21,26 +21,32 @@ pub enum ProofType {
 }
 
 #[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
+#[command(author, version, about, long_about = None)]
 struct Args {
-    #[clap(long)]
+    /// String argument for domain
+    #[arg(long, default_value = "envoy1084.xyz")]
+    domain: String,
+
+    /// Flag to execute
+    #[arg(long)]
     execute: bool,
 
-    #[clap(long)]
+    /// Flag to prove
+    #[arg(long)]
     prove: bool,
 
+    /// Proof mode (enum)
     #[arg(value_enum, default_value_t = ProofType::Core)]
-    pub mode: ProofType,
+    mode: ProofType,
 
-    #[arg(long, default_value_t = false)]
+    /// Flag to print report
+    #[arg(long)]
     print_report: bool,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let domain = "envoy1084.xyz";
-    let inputs = generate_inputs(domain)?;
-
     let args = Args::parse();
+    let inputs = generate_inputs(&args.domain)?;
 
     if args.execute == args.prove {
         eprintln!("Error: You must specify either --execute or --prove");
