@@ -31,6 +31,9 @@ struct Args {
 
     #[arg(value_enum, default_value_t = ProofType::Core)]
     pub mode: ProofType,
+
+    #[arg(long, default_value_t = false)]
+    print_report: bool,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -69,8 +72,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let decoded = PublicValuesStruct::abi_decode(output.as_slice(), true)?;
 
         println!("RRSIG Verified: {:#?}", decoded.is_valid);
-        let report = Report::from_execution_report(report);
-        report.print_table();
+
+        if args.print_report {
+            let report = Report::from_execution_report(report);
+            report.print_table();
+        }
     }
 
     if args.prove {

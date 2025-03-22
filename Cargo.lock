@@ -6525,6 +6525,7 @@ dependencies = [
  "enum-map",
  "enum-map-derive",
  "hashbrown 0.14.5",
+ "hex",
  "serde",
  "serde_json",
  "sp1-build",

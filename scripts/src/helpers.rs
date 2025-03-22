@@ -1,5 +1,8 @@
+use hex::encode;
+
 use trust_dns_client::rr::rdata::DNSKEY;
 use trust_dns_client::rr::rdata::RRSIG;
+use trust_dns_client::rr::rdata::TXT;
 use trust_dns_client::rr::Record;
 use trust_dns_client::rr::RecordData;
 use trust_dns_client::rr::RecordType;
@@ -13,6 +16,17 @@ use zkdnssec_lib::rr::domain::name::Name as ZKName;
 use zkdnssec_lib::rr::rdata::txt::TXT as ZKTXT;
 use zkdnssec_lib::rr::record_type::RecordType as ZKRecordType;
 use zkdnssec_lib::rr::resource::Record as ZKRecord;
+
+fn convert_to_ascii(data: &[Box<[u8]>]) -> Vec<String> {
+    data.iter()
+        .map(|boxed_slice| {
+            match std::str::from_utf8(boxed_slice) {
+                Ok(s) => s.to_string(),
+                Err(_) => format!("{:?}", boxed_slice), // Handle non-ASCII data gracefully
+            }
+        })
+        .collect()
+}
 
 fn create_resolver() -> Result<Resolver, Box<dyn std::error::Error>> {
     let resolver_config = ResolverConfig::google();
@@ -36,32 +50,37 @@ fn get_txt_records(domain: &str) -> Result<(Record, Record), Box<dyn std::error:
         .iter()
         .find(|r| {
             let data = RRSIG::try_from_rdata(r.data().unwrap().clone()).unwrap();
-            data.type_covered() == RecordType::TXT
+
+            data.type_covered() == RecordType::TXT && data.signer_name() == txt_records.name()
         })
         .unwrap();
 
     Ok((txt_records.clone(), rrsig_records.clone()))
 }
 
-fn get_dnskey(domain: &str) -> Result<Record, Box<dyn std::error::Error>> {
+fn get_dnskey(domain: &str, key_tag: u16) -> Result<DNSKEY, Box<dyn std::error::Error>> {
     let resolver = create_resolver()?;
 
     let dns_key_response = resolver.lookup(domain, RecordType::DNSKEY)?;
 
-    let dns_key_records = dns_key_response
+    let dns_keys: Vec<DNSKEY> = dns_key_response
         .records()
         .iter()
-        .find(|r| {
-            let data = match r.data() {
-                Some(data) => data.clone(),
-                None => panic!("No data found"),
-            };
+        .map(|r| {
+            let r_data = r.data().unwrap();
+            DNSKEY::try_from_rdata(r_data.clone()).unwrap()
+        })
+        .collect(); // Store in a variable first
 
-            DNSKEY::try_from_rdata(data.clone()).is_ok()
+    let dns_key = dns_keys
+        .iter()
+        .find(|k| {
+            let calculated = k.calculate_key_tag().unwrap();
+            calculated == key_tag
         })
         .unwrap();
 
-    Ok(dns_key_records.clone())
+    Ok(dns_key.clone())
 }
 
 pub struct Inputs {
@@ -75,8 +94,7 @@ pub struct Inputs {
 
 pub fn generate_inputs(domain: &str) -> Result<Inputs, Box<dyn std::error::Error>> {
     let (txt_record, rrsig_record) = get_txt_records(domain)?;
-    let dns_key_record = get_dnskey(domain)?;
-
+    let txt: TXT = txt_record.data().unwrap().clone().into_txt().unwrap();
     let rrsig = match RRSIG::try_from_rdata(rrsig_record.data().unwrap().clone()) {
         Ok(rrsig) => rrsig,
         Err(e) => panic!(
@@ -85,13 +103,7 @@ pub fn generate_inputs(domain: &str) -> Result<Inputs, Box<dyn std::error::Error
         ),
     };
 
-    let dns_key = match DNSKEY::try_from_rdata(dns_key_record.data().unwrap().clone()) {
-        Ok(key) => key,
-        Err(e) => panic!(
-            "Failed to convert DNSKEY record into structured form: {:?}",
-            e
-        ),
-    };
+    let dns_key = get_dnskey(domain, rrsig.key_tag())?;
 
     let pub_key = dns_key.public_key();
 
@@ -106,7 +118,42 @@ pub fn generate_inputs(domain: &str) -> Result<Inputs, Box<dyn std::error::Error
 
     let signature = rrsig.sig().to_vec();
 
-    let zk_name = ZKName::from_ascii("envoy1084.xyz").unwrap();
+    println!("\n\nDomain: {:?}", domain);
+
+    println!("\n======================== Record Details ========================\n");
+    println!("Name Labels: {:?}", txt_record.name().clone());
+    println!("Record Type: {:?}", txt_record.record_type().clone());
+    println!("DNS Class: {:?}", txt_record.dns_class().clone());
+    println!("TTL: {:?}", txt_record.ttl().clone());
+    println!("RDATA: {:?}", convert_to_ascii(txt.txt_data()));
+
+    println!("\n======================== Record Details ========================\n");
+    println!(
+        "Secure Entry Point: {:?}",
+        dns_key.secure_entry_point().clone()
+    );
+    println!("Revoke: {:?}", dns_key.revoke().clone());
+    println!("Key Tag: {:?}", dns_key.calculate_key_tag().clone());
+    println!("Algorithm: {:?}", dns_key.algorithm().clone());
+    println!("Zone Key: {:?}", dns_key.zone_key().clone());
+    println!("Public Key: {:?}", encode(dns_key.public_key()));
+
+    println!("\n======================== Record Details ========================\n");
+    println!("Name Labels: {:?}", rrsig_record.name().clone());
+    println!("Record Type: {:?}", rrsig_record.record_type().clone());
+    println!("DNS Class: {:?}", rrsig_record.dns_class().clone());
+    println!("TTL: {:?}", rrsig_record.ttl().clone());
+    println!("Type Covered: {:?}", rrsig.type_covered().clone());
+    println!("Algorithm: {:?}", rrsig.algorithm().clone());
+    println!("No. of Labels: {:?}", rrsig.num_labels().clone());
+    println!("Original TTL: {:?}", rrsig.original_ttl().clone());
+    println!("Signature Expiration: {:?}", rrsig.sig_expiration().clone());
+    println!("Signature Inception: {:?}", rrsig.sig_inception().clone());
+    println!("Key Tag: {:?}", rrsig.key_tag().clone());
+    println!("Signer Name: {:?}", rrsig.signer_name().clone());
+    println!("Signature: {:?}\n", encode(signature.clone()));
+
+    let zk_name = ZKName::from_ascii(domain).unwrap();
     let zk_dns_class: ZKDNSClass = ZKDNSClass::IN;
     let zk_type_covered = ZKRecordType::TXT;
     let zk_algorithm = ZKAlgorithm::ECDSAP256SHA256;
