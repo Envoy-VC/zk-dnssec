@@ -152,8 +152,8 @@ cargo run -- --prove {mode}
 
 Mode can be one of the following:
 
-- `core`: Generate a STARK proof using the Core backend.
-- `compressed`: Generate a STARK proof using the Compressed backend.
+- `core`: Generate a Core SP1 STARK proof.
+- `compressed`: Generate a Compressed SP1 STARK proof.
 - `groth16`: Generate a Groth16 proof.
 - `plonk`: Generate a PLONK proof.
 
