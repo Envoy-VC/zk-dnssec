@@ -7,6 +7,7 @@ use trust_dns_client::rr::Record;
 use trust_dns_client::rr::RecordData;
 use trust_dns_client::rr::RecordType;
 use trust_dns_resolver::config::*;
+use trust_dns_resolver::IntoName;
 use trust_dns_resolver::Resolver;
 
 use zkdnssec_lib::rr::dns_class::DNSClass as ZKDNSClass;
@@ -37,12 +38,15 @@ fn create_resolver() -> Result<Resolver, Box<dyn std::error::Error>> {
     Ok(resolver)
 }
 
-fn get_txt_records(domain: &str) -> Result<(Record, Record), Box<dyn std::error::Error>> {
+fn get_txt_records(
+    domain: &str,
+    name: &str,
+) -> Result<(Record, Record), Box<dyn std::error::Error>> {
     let resolver = create_resolver()?;
 
     let txt_response = resolver.lookup(domain, RecordType::TXT)?;
 
-    let rrsig_response = resolver.lookup(domain, RecordType::RRSIG)?;
+    let rrsig_response = resolver.lookup(IntoName::into_name(name).unwrap(), RecordType::RRSIG)?;
 
     let txt_records = txt_response.records().first().unwrap();
     let rrsig_records = rrsig_response
@@ -92,8 +96,8 @@ pub struct Inputs {
     pub signature: Vec<u8>,
 }
 
-pub fn generate_inputs(domain: &str) -> Result<Inputs, Box<dyn std::error::Error>> {
-    let (txt_record, rrsig_record) = get_txt_records(domain)?;
+pub fn generate_inputs(domain: &str, name: &str) -> Result<Inputs, Box<dyn std::error::Error>> {
+    let (txt_record, rrsig_record) = get_txt_records(domain, name)?;
     let txt: TXT = txt_record.data().unwrap().clone().into_txt().unwrap();
     let rrsig = match RRSIG::try_from_rdata(rrsig_record.data().unwrap().clone()) {
         Ok(rrsig) => rrsig,

@@ -39,6 +39,10 @@ struct Args {
     #[arg(long, default_value = "envoy1084.xyz")]
     domain: String,
 
+    // String for name to search for
+    #[arg(long, default_value = "envoy1084.xyz")]
+    name: String,
+
     /// Flag to execute
     #[arg(long)]
     execute: bool,
@@ -63,7 +67,7 @@ struct Args {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
     let args = Args::parse();
-    let inputs = generate_inputs(&args.domain)?;
+    let inputs = generate_inputs(&args.domain, &args.name)?;
 
     if args.execute == args.prove {
         eprintln!("Error: You must specify either --execute or --prove");
