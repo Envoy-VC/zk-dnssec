@@ -16,8 +16,6 @@ struct SP1ProofFixtureJson {
 contract ZKDNSSECGroth16Test is Test {
     using stdJson for string;
 
-    address groth16SP1Gateway = 0x397A5f7f3dBd538f23DE225B51f532c34448dA9B;
-
     address verifier;
     ZKDNSSEC public dnssec;
 
@@ -32,7 +30,7 @@ contract ZKDNSSECGroth16Test is Test {
     function setUp() public {
         SP1ProofFixtureJson memory fixture = loadFixture();
 
-        verifier = address(new SP1VerifierGateway(groth16SP1Gateway));
+        verifier = address(new SP1VerifierGateway(address(1)));
         dnssec = new ZKDNSSEC(verifier, fixture.vkey);
     }
 
@@ -58,8 +56,6 @@ contract ZKDNSSECGroth16Test is Test {
 contract DNSSECPlonkTest is Test {
     using stdJson for string;
 
-    address plonkSP1Gateway = 0x3B6041173B80E77f038f3F2C0f9744f04837185e;
-
     address verifier;
     ZKDNSSEC public dnssec;
 
@@ -74,7 +70,7 @@ contract DNSSECPlonkTest is Test {
     function setUp() public {
         SP1ProofFixtureJson memory fixture = loadFixture();
 
-        verifier = address(new SP1VerifierGateway(plonkSP1Gateway));
+        verifier = address(new SP1VerifierGateway(address(1)));
         dnssec = new ZKDNSSEC(verifier, fixture.vkey);
     }
 
