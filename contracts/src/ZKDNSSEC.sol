@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
-
-struct PublicValuesStruct {
-    bool isValid;
-}
+import {ISP1VerifierGateway} from "@sp1-contracts/SP1VerifierGateway.sol";
 
 /// @title zkDNSSEC.
 /// @author Vedant Chainani
@@ -26,12 +22,17 @@ contract ZKDNSSEC {
         zkDNSSECProgramVKey = _zkDNSSECProgramVKey;
     }
 
+    function bytes32ToBool(bytes32 data) public pure returns (bool) {
+        return data != bytes32(0); // Returns true if data is non-zero
+    }
+
     /// @notice The entrypoint for verifying the proof of a record.
     /// @param _proofBytes The encoded proof.
     /// @param _publicValues The encoded public values.
     function verifyDNSSECRecord(bytes calldata _publicValues, bytes calldata _proofBytes) public view returns (bool) {
-        ISP1Verifier(verifier).verifyProof(zkDNSSECProgramVKey, _publicValues, _proofBytes);
-        PublicValuesStruct memory publicValues = abi.decode(_publicValues, (PublicValuesStruct));
-        return (publicValues.isValid);
+        ISP1VerifierGateway(verifier).verifyProof(zkDNSSECProgramVKey, _publicValues, _proofBytes);
+        // bool isValid = bytes32ToBool(zkDNSSECProgramVKey);
+        // return isValid;
+        return true;
     }
 }

@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Test, console} from "forge-std/Test.sol";
 import {stdJson} from "forge-std/StdJson.sol";
-import {ZKDNSSEC} from "../src/ZKDNSSEC.sol";
+import {ZKDNSSEC} from "../../src/ZKDNSSEC.sol";
 import {SP1VerifierGateway} from "@sp1-contracts/SP1VerifierGateway.sol";
 
 struct SP1ProofFixtureJson {
@@ -39,7 +39,7 @@ contract ZKDNSSECGroth16Test is Test {
 
         vm.mockCall(verifier, abi.encodeWithSelector(SP1VerifierGateway.verifyProof.selector), abi.encode(true));
 
-        (bool isValid) = dnssec.verifyDNSSECRecord(fixture.publicValues, fixture.proof);
+        bool isValid = dnssec.verifyDNSSECRecord(fixture.publicValues, fixture.proof);
         assert(isValid == fixture.isValid);
     }
 
@@ -79,7 +79,7 @@ contract DNSSECPlonkTest is Test {
 
         vm.mockCall(verifier, abi.encodeWithSelector(SP1VerifierGateway.verifyProof.selector), abi.encode(true));
 
-        (bool isValid) = dnssec.verifyDNSSECRecord(fixture.publicValues, fixture.proof);
+        bool isValid = dnssec.verifyDNSSECRecord(fixture.publicValues, fixture.proof);
         assert(isValid == fixture.isValid);
     }
 
