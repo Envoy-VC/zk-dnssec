@@ -123,33 +123,40 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .run()
             .expect("Failed to generate proof");
 
-        proof.save("proof").expect("Failed to save proof");
+        let proof_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("./proofs");
+        std::fs::create_dir_all(&proof_path).expect("failed to create proof path");
 
-        let bytes = proof.public_values.as_slice();
-        let pub_values = PublicValuesStruct::abi_decode(bytes, false).unwrap();
+        proof
+            .save(format!("proofs/{:?}-proof.bin", mode).to_lowercase())
+            .expect("Failed to save proof");
 
-        // Create the testing fixture so we can test things end-to-end.
-        let fixture = SP1ZKDNSSECProofFixture {
-            is_valid: pub_values.is_valid,
-            vkey: vk.vk.bytes32().to_string(),
-            public_values: format!("0x{}", hex::encode(bytes)),
-            proof: format!("0x{}", hex::encode(proof.bytes())),
-        };
+        if args.mode == ProofType::Groth16 || args.mode == ProofType::Plonk {
+            let bytes = proof.public_values.as_slice();
+            let pub_values = PublicValuesStruct::abi_decode(bytes, false).unwrap();
 
-        let fixture_path =
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../contracts/src/fixtures");
-        std::fs::create_dir_all(&fixture_path).expect("failed to create fixture path");
-        std::fs::write(
-            fixture_path.join(format!("{:?}-fixture.json", mode).to_lowercase()),
-            serde_json::to_string_pretty(&fixture).unwrap(),
-        )
-        .expect("failed to write fixture");
+            // Create the testing fixture so we can test things end-to-end.
+            let fixture = SP1ZKDNSSECProofFixture {
+                is_valid: pub_values.is_valid,
+                vkey: vk.vk.bytes32().to_string(),
+                public_values: format!("0x{}", hex::encode(bytes)),
+                proof: format!("0x{}", hex::encode(proof.bytes())),
+            };
+
+            let fixture_path =
+                PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../contracts/src/fixtures");
+            std::fs::create_dir_all(&fixture_path).expect("failed to create fixture path");
+            std::fs::write(
+                fixture_path.join(format!("{:?}-fixture.json", mode).to_lowercase()),
+                serde_json::to_string_pretty(&fixture).unwrap(),
+            )
+            .expect("failed to write fixture");
+        }
 
         println!("Successfully generated proof!");
         if args.verify {
             client.verify(&proof, &vk).expect("failed to verify proof");
+            println!("Successfully verified proof!");
         }
-        println!("Successfully verified proof!");
     }
 
     Ok(())
