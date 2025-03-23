@@ -19,18 +19,18 @@ contract ZKDNSSEC {
     address public verifier;
 
     /// @notice The verification key for the zkDNSSEC program.
-    bytes32 public fibonacciProgramVKey;
+    bytes32 public zkDNSSECProgramVKey;
 
-    constructor(address _verifier, bytes32 _fibonacciProgramVKey) {
+    constructor(address _verifier, bytes32 _zkDNSSECProgramVKey) {
         verifier = _verifier;
-        fibonacciProgramVKey = _fibonacciProgramVKey;
+        zkDNSSECProgramVKey = _zkDNSSECProgramVKey;
     }
 
     /// @notice The entrypoint for verifying the proof of a record.
     /// @param _proofBytes The encoded proof.
     /// @param _publicValues The encoded public values.
     function verifyDNSSECRecord(bytes calldata _publicValues, bytes calldata _proofBytes) public view returns (bool) {
-        ISP1Verifier(verifier).verifyProof(fibonacciProgramVKey, _publicValues, _proofBytes);
+        ISP1Verifier(verifier).verifyProof(zkDNSSECProgramVKey, _publicValues, _proofBytes);
         PublicValuesStruct memory publicValues = abi.decode(_publicValues, (PublicValuesStruct));
         return (publicValues.isValid);
     }
